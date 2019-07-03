@@ -1,0 +1,742 @@
+\date{}
+\documentclass{article}
+\usepackage{fancyhdr}
+\setlength{\headheight}{15.2pt}
+\pagestyle{fancyplain}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage[usenames]{color}
+\usepackage[]{caption}
+\usepackage[all]{xy}
+\usepackage{amsthm}
+\usepackage{pacioli}
+\usepackage{wasysym}
+\usepackage[OT1]{fontenc}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{cprotect} % can be used to combine fbox and verbatim by \cprotect\fbox{...\begin{verbatim}...}
+
+% kbt edit
+\newcommand*{\REF}{\textcolor{red}{REF}}
+
+\newcommand*{\bbeta}{\boldsymbol \beta}
+
+\newenvironment{pac}{\fontfamily{pacioli}\selectfont}{}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\DeclareMathOperator*{\mycup}{\bigcup}
+\DeclareMathOperator*{\mycap}{\bigcap}
+\DeclareMathOperator*{\mytimes}{\times}
+\title{Solutions to \\ Course Work - for Copenhagen course week \\ MEDIASRES}
+\author{Ketil Biering Tvermosegaard}
+\linespread{1}
+\selectfont
+
+\newtheoremstyle{example}{\topsep}{\topsep}%
+     {}%         Body font
+     {}%         Indent amount (empty = no indent, \parindent = para indent)
+     {\bfseries}% Thm head font
+     {}%        Punctuation after thm head
+     {\newline}%     Space after thm head (\newline = linebreak)
+     {\thmname{#1}\thmnumber{ #2}\thmnote{ #3}}%         Thm head spec
+
+   \theoremstyle{example}
+   \newtheorem{example}{Example}[subsection]
+   \newtheorem{subexample}{Example}[subsubsection]
+
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
+\bibpunct{(}{)}{,}{a}{,}{;}
+\bibliographystyle{plainnat}
+
+\usepackage[disable]{todonotes}
+%\usepackage{todonotes}
+
+\begin{document}
+
+	\section{Overview of \textsf{doptim} package}
+
+    \todo[inline]{check whether defn of aPMS in relevant chapter is correct (notation?)}
+
+	\todo[inline]{check whether defn of aPMS in relevant chapter is correct (notation?)}
+	
+	\todo[inline]{in the introduction, give an overview of the theory behind the additional (relative to the previous chapters) features made available in the itemized list below (reduced FIM, etc)}
+	
+	\todo[inline]{also, make sure to describe in detail the defaults... what are the starting values, choice of algorithms etc.}
+	
+    \todo[inline]{have we defined $D_{\bbeta}$? We ought / need to.}
+	
+	\todo[inline]{is the point about simple linear reg resulting in 1/2 to each extreme only true for the parametrisation where covariates are centred? 
+	Are fixed effects optimal designs not invariant to reparametrisation? Check Fox's note on FIM for nonlinear regression \cite{Fox2002}.
+	Answer seems to be no: check page 186 of \cite{OBrien2005}
+	In fact, according to page 5 of \cite{Silvey1980}, for the case with non-centred covariates there is no general expression for the }
+	
+	All of the results in \textcolor{red}{Chapter 2} were produced with the \textsf{R}-packages and \textsf{doptim} \textsf{randon}.
+	Both packages were produced by the present author for the purpose of this thesis.
+	
+	The \textsf{genObjFun} function in the \textsf{doptim} package allows the user to specify an NLME model and, for a given size of population design, generate the corresponding $D$-optimality objective function, which can then be optimized with any of the available optimizers in \textsf{R}.
+	The user can choose between
+	\begin{itemize}
+		\item{FO and InFO $D$-optimality}
+		\item{
+			reduced and full \textsf{FIM} 
+			\todo{this must be explained AND also: must be resolved with Nyberg}
+		}
+		\item{returning $\log[\textsf{det} (\textsf{FIM})]$ or the whole \textsf{FIM}. This is of interest when singular \textsf{FIM}s occur}
+		\item{$D$ or $D_A$-optimality, i.e., the user can specify a function of \textcolor{red}{$\theta$} as the parameter of interest}
+		\item{Local or pseudo-Bayesian $D$-optimality}
+	\end{itemize}
+
+    \todo[inline]{KBT: It should be noted that the FIM in question includes the variance components. However, independence is still assumed, i.e., $\Omega$ is assumed to be diagonal}
+
+	The \textsf{calc\_aPMS} \todo{[KBT: eqn ref?]}
+	function in the \textsf{randon} package allows the user to calculate the aPMS for a given regression function.
+	It is used by the \textsf{plot\_sensBands} function to plot sensitivity bands as in \REF.
+	\textsf{calc\_aPMS} is also used by the \textsf{genOptimDesnRange} function; this function is used to generate the design graphs in \REF\ 
+	and \textsf{calc\_aPMS} allows us to plot with variance level on the x-axis rather than the magnitude of the variance components.
+	
+	\todo[inline]{table of arguments (and functions?) as on page 6 of Dave's example vignette, \cite{Overstall2017}.}
+	
+	
+	\section{Example: Simple linear regression aka how to specify a model in \textsf{doptim}}
+	
+	\todo[inline]{\REF : also known as random intercept model? (see \cite{SchwabeSchmelter2008})}
+	
+	This example covers the basic usage of the \textsf{genObjFun} function in the \textsf{doptim} package.
+	It is used to generate a $D$-optimality objective function for a user-specified NLME model: simple linear regression with random effects.
+	
+	In this model, $\eta$ is of the form
+	\[
+	\eta(\bbeta, t) = \beta_1 + \beta_1 t = (\beta_1 + \beta_2) \binom{1}{t}
+	\ ,
+	\]
+	with $t \in [a, b]$ for a fixed choice of $a, b > 0$ with $a < b$.
+	Since $\eta$ is linear in $\bbeta$ this will technically lead to an LME model, which is not representative of the models this thesis is otherwise concerned with.
+	However, an LME model is merely a special case of an NLME model (recall, $\eta$ is allowed but not required to be nonlinear in $\bbeta$).
+
+	One reason to consider such a simple model to begin with is that it is one of the few cases where explicit results regarding $D$-optimal designs are available.
+	In the fixed effects case, and with an even number of samples, it is known (see e.g. page 70 of \cite{AtkinsonBook2007}) that the $D$-optimal design assigns half of the samples to $t = a$ and the other half of the samples to $t=b$.
+	Therefore, it can be expected that when $\omega_1$ and $\omega_2$ are both small	, the $D$-optimal design for estimating $\bbeta$ will be of a similar form.
+
+    \todo[inline]{
+		on page 148-149t of \cite{SchwabeSchmelter2008} there is a result which might(?) imply something about the relation between what the authors call $D_{\bbeta}$-optimal designs for random intercept models and $D$-optimal designs for fixed effects models. Particular mention is made of the case where the same design is applied to all individuals in which case the "results simplify dramatically" - come back to this and decide what the implications are for your work.
+	}
+
+
+	The parameters of the model are assumed to be
+	\[
+	\bbeta = (3, 5)
+	\quad
+	\Omega = \textsf{diag} \{.1, .1\}
+	\quad
+	\sigma^2  = 0.25^2
+	\ ,
+	\]
+	and the first task is to find a $D_{\bbeta}$-optimal design for a single individual 
+	($N = 1$? \todo{What notation did we use?}
+	for whom six samples are taken ($k = 6$ ? \todo{Again with the notation}
+	in the time interval $[0 , 10]$.
+	
+	To generate the $D_{\bbeta}$-optimality objective function
+	\todo{when to mention reduced, local, etc?}
+	run the following \textsf{R}-code:
+	
+	
+	
+	\begin{verbatim}
+objFun <- genObjFun(
+  eta = expression(
+    (beta1 + b1) + (beta2+b2) * t
+  ), 
+  Ebeta = c(0, 1), 
+  Vb = c(Vb1 = .1, Vb2 = .1), 
+  Veps = .25^2, 
+  phi = "fixed",
+  desvarNames = "t",
+  noSamples = 6
+  )
+	\end{verbatim}
+	
+	The arguments to \textsf{genObjFun} clearly specify the model described above as well as some aspects of the design problem; 
+	by setting \textsf{phi = "fixed"} it is indicated that a $D_{\bbeta}$-optimal design is sought and
+	by setting \textsf{noSamples = c(6)} the number of individuals is set to the length of the \textsf{noSamples} vector (i.e. one) and the number of samples (for each individual) is 
+	set to the corresponding entry in the \textsf{noSamples} vector (i.e. six for the single individual in the design).
+	
+	The objective function can now be evaluated in a design of the user's choice, provided it is of the correct length:
+	
+	\begin{verbatim}
+	Xi0 <- c(1, 2, 4, 6, 8, 10)
+	objFun(Xi0)
+	
+	# returns #
+	
+	[1] -4.276033
+	\end{verbatim}
+	
+	
+	One aspect of the design problem which is not specified above is the experimental region, i.e., that $[a, b] = [0,10]$.
+	That is addressed in the optimisation step where the user is free to employ any optimisation algorithm they deem appropriate.
+	Given that this is a bounded optimisation problem, the \textsf{nlminb} function (available in the pre-loaded package \textsf{stats}) can be used:
+	
+	\begin{verbatim}
+	nlminb(
+	    start = Xi0,
+	    objective = objFun,
+	    lower = 0,
+	    upper = 10
+	)
+	
+	# returns #
+	
+	$`par`
+	[1]  0  0  0  0  0 10
+	
+	$objective
+	[1] -4.480053
+	
+	$convergence
+	[1] 0
+	
+	$iterations
+	[1] 20
+	
+	$evaluations
+	function gradient 
+	20      121 
+	
+	$message
+	[1] "both X-convergence and relative convergence (5)"
+	\end{verbatim}
+	
+	The list of outputs from \textsf{nlminb} includes \textsf{`par`} which is the optimum identified by the algorithm.
+	In this case, the optimum identified by the algorithm is different from the theoretical optimum in the fixed effects case.
+	A simple way to check this is to reduce the magnitude of the variance component and re-run the code.
+	Since it takes at least seven arguments to specify a $D$-optimality problem, 
+	it is advisable to save these arguments in a dedicated list so as to avoid duplicating code:
+	
+	\begin{verbatim}
+	
+	args <- list(
+	  eta = expression(
+	    (beta1 + b1) + (beta2+b2) * t
+	  ), 
+	  Ebeta = c(0, 1), 
+	  Vb = c(Vb1 = 1, Vb2 = 1)/10, 
+	  Veps = .25^2, 
+	  phi = "fixed",
+	  desvarNames = "t",
+	  noSamples = c(6)
+	)
+	
+	\end{verbatim}
+	
+	Now it is simple to reduce the variance components and re-run the problem with the rest of the problem retained:
+	
+	\begin{verbatim}
+	args$Vb = c(Vb1 = 1, Vb2 = 1)/10000
+	
+	objFun <- do.call(genObjFun, args)
+	
+	nlminb(
+	  start = Xi0,
+	  objective = objFun,
+	  lower = 0,
+	  upper = 10
+	)
+	
+	# returns #
+	
+	$`par`
+	[1]  0  0  0 10 10 10
+	
+	$objective
+	[1] -11.94752
+	
+	$convergence
+	[1] 0
+	
+	$iterations
+	[1] 12
+	
+	$evaluations
+	function gradient 
+	12       72 
+	
+	$message
+	[1] "both X-convergence and relative convergence (5)"
+	\end{verbatim}
+	
+	With the variance component reduced, \textsf{nlminb} yields the same optimum as the fixed effects version of the problem, i.e., it splits the samples evenly between the two boundaries of the time interval.	
+
+	
+	\section{Example: exponential decay - first nonlinear example}
+	
+	A simple, but important, example where the regression function is nonlinear is exponential decay.
+	This is another case where a general expression for the $D$-optimal design has been found for the fixed effects case \citep{Kitsos2013}.
+	
+	The regression function is
+	
+	\[
+	\eta(\bbeta , t) = \beta_1 \exp ( \beta_2 t) \ ,
+	\]
+	
+	the parameters of the model are assumed to be 
+	\[
+	\bbeta = (1, - 1/10 )
+	\quad
+	\Omega = \textsf{diag}\{1/100, 1/100\}
+	\quad
+	\sigma^2 = 1/1000
+	\]
+	
+	and the experimental region is $\mathcal X = [0, 30]$.
+	To specify and solve the problem, again searching for a single elementary $D_\beta$-optimal design of length six:
+	
+	\begin{verbatim}
+args <- list(
+  eta = expression(
+  (beta1 + b1) * exp((beta2 + b2)*t)
+  ), 
+  Ebeta = c(1, - 1/10), 
+  Vb = c(1, 1)/100, 
+  Veps = 1/1000, 
+  phi = "fixed",
+  desvarNames = "t",
+  noSamples = c(6)
+)
+
+
+objFun <- do.call(genObjFun, args)
+
+Xi0 = 1:6/10
+
+nlminb(
+  start = Xi0,
+  objective = objFun,
+  lower = 0,
+  upper = 30
+)
+
+# returns #
+
+$`par`
+[1]  0.000000  0.000000  0.000000  3.894444  3.894445 25.562844
+
+$objective
+[1] -14.13597
+
+$convergence
+[1] 0
+
+$iterations
+[1] 23
+
+$evaluations
+function gradient 
+24      157 
+
+$message
+[1] "relative convergence (4)"
+	\end{verbatim}
+	
+	
+	According to \cite{Kitsos2013}, the $D$-optimal design for the fixed effects case has support points $(0, - 1/\beta_1) = (0, 10)$.
+	Again, one can check if decreasing the magnitude of the variance component produces designs that are closer to the fixed effects case.
+	In the code below, a decreasing sequence of variance component magnitudes is used to generate a sequence of $D_\beta$-optimal designs:
+	
+	\begin{verbatim}
+var_mags <- seq(1/10^3, 1/10^5, length.out = 20)
+
+optim_desns <- t(sapply(var_mags,
+       function(x){
+         args$Vb <- c(1, 1) * x
+         objFun <- do.call(genObjFun, args)
+         res <- try(nlminb(
+           start = Xi0,
+           objective = objFun,
+           lower = 0,
+           upper = 30
+         )$par)
+         if(class(res) == "try-error") return(rep(NA, length(Xi0)))
+         return(res)
+         }))
+
+# returns #         
+
+Error in chol.default(x) : 
+the leading minor of order 2 is not positive definite
+
+\end{verbatim}
+
+Note that in a single case, numerical issues caused the matrix inversion of the variance of the linearised model to fail.
+Base \textsf{R} can be used to generate a simple design graph with the following code:
+
+\begin{verbatim}s
+matplot(var_mags, optim_desns)
+\end{verbatim}
+	
+Which produces the following figure for the 19 successfully computed designs.
+
+\begin{figure}[h!]
+% \includegraphics[width=3.5in]{"C:/Users/ketil/OneDrive/Documents/research/Research/Reports/thesis_corrections/chap_3/code/output/02 - exponential decay - desngraph"}
+\includegraphics[width=3.5in]{"../code/output/02 - exponential decay - desngraph"}
+\caption{
+	A simple version of the design graphs found in earlier chapters. 
+	The plotting symbol is the index of the sampling time in the individual $D_\beta$-optimal design being plotted and the x-axis is the variance magnitude used to generate the design.
+	}
+\label{expdec_first_nonlin_ex}
+\end{figure}
+
+	As can be seen from Figure \ref{expdec_first_nonlin_ex}, when the magnitude of the variance component is reduced sufficiently, the $D_\beta$-optimal designs have two sampling times, the first at 0 and the second at a time which converges to 10.
+	This is consistent with the above-mentioned result from \cite{Kitsos2013}.
+	
+	\newpage
+	
+	\section[Replicating Wang2012]{Example: replicating results from [KBT: REF] wang2012}
+	
+	In \cite{Wang2012}, several kinds of $D$-optimal design are found for a specific NLME model.
+	In this example, some of those results are reproduced using the \textsf{doptim} package.
+	The regression function is motivated by a one-compartment model:
+	\[
+	\eta(\bbeta , t) = \frac{\exp(\beta_1 - \beta_3)}{\exp(\beta_1)-\exp(\beta_2)} \{ \exp(- \exp(\beta_2) t) - \exp(-\exp(\beta_1) t)\} \ .
+	\]
+	Note that the model is parametrised so as to ensure positivity of rate constants ($\exp(\beta_1)$ and $\exp(\beta_2)$) and volume of distribution ($\exp(\beta_3)$).
+
+\subsection{$D_\beta$-optimal design for a single individual}
+
+\begin{verbatim}
+args0 <- list(
+  eta = expression(
+    exp((beta2 + b2) - (beta3 + b3))/
+      (exp(beta2+b2)-exp(beta1+b1)) *
+      (exp(-exp(beta1+b1)*t) - exp(-exp(beta2 + b2)*t))
+  ),
+  Ebeta = c(0, 1, 1),
+  Vb = c(0.05, 0.05, 0.1),
+  Veps = 0.05^2,
+  phi = "fixed",
+  desvarNames = "t",
+  noSamples = c(5),
+  reduced = TRUE
+)
+
+objFun <- do.call(genObjFun, args0)
+
+Xi0 <- seq(0, 4, length.out = 5)
+nlminb(start = Xi0, objective = objFun, lower = 0, upper = 4)
+
+# returns #
+
+$`par`
+[1] 0.1961514 0.1961512 0.9437235 2.5528683 2.5528691
+
+$objective
+[1] -3.170249
+
+$convergence
+[1] 0
+
+$iterations
+[1] 16
+
+$evaluations
+function gradient 
+19      107 
+
+$message
+[1] "relative convergence (4)"
+\end{verbatim}
+
+	The resulting design, along with the value of the objective function, correspond exactly with the first row of Table 1 in \cite{Wang2012}.
+	Note the argument \textsf{reduced = TRUE} in the code; this indicates that in the approximation of the \textsf{FIM}, the "trace term" should be set to zero.
+	More specifically, recall from Section \ref{sec:FIMapprox} that the linearised model had \textsf{FIM}
+
+	\begin{align*}
+	\textsf{FIM}_{lin} (\bar{\mathbf b} )_{kl}
+	&=
+	\sum_{i=1}^n
+	\bigg[
+	\frac{\partial E_i^\top}{\partial \beta_k} 
+	V_i^{-1} 
+	\frac{\partial E_i}{\partial \beta_l} \\
+	&+
+	\frac 1 2
+	\textsf{trace}
+	\left(
+	\frac{\partial V_i}{\partial \beta_l}
+	V_i^{-1}
+	\frac{\partial V_i}{\partial \beta_k}
+	V_i^{-1}
+	\right) \bigg]
+	\ .
+	\end{align*}
+
+	The ``reduced'' version omits the second term of this approximation.
+	In \cite{Wang2012}, this is recommended for cases where the variance component is deemed ``small''.
+
+\todo[inline]{
+			In \cite{Wang2012}, C=0 while the trace term is retained. 
+			This is what I implemented originally (and from that article).
+			In Fedorov and Leonov's PODE slides, it is strongly suggested that C=0 and trace=0 are two different things. 
+			However, Nyberg has connected the two by saying they are both consequences of assuming independence of $V$ and $\beta$.
+			I think he is the only one to do this.	
+		}
+	
+\todo[inline]{
+			How do I distinguish between fully $D$-optimal and $D_\beta$-optimal?
+			In the preceding chapters I at some point say that we are restricting ourselves to $D_\beta$-optimal.
+			Maybe simply remove that restriction in the beginning of this chapter?
+		}
+
+\subsection{Composite $D$-optimal design}
+
+	In \cite{Wang2012}, the \emph{composite $D$-optimality criterion} is introduced, which allows the user to express a weighted interest in the fixed effects and variance components, respectively.
+	Specifically, for a chosen $\lambda \in [0,1]$, the composite $D$-optimality criterion is to find the design $\xi^\ast \in \Xi$ which maximizes
+	\[
+	\lambda \cdot \log \det \textsf{FIM} (\xi^\ast)_\beta  + 	(1-\lambda ) \cdot \log \det \textsf{FIM} (\xi^\ast)_{\omega, \sigma^2}
+	\]
+	
+\todo[inline]{
+			Define above terms a bit better
+		}
+	
+	The following code replicates a result from \cite{Wang2012}, second row of Table 2.
+	For the same model as before, the composite $D$-optimality objective function is created, with $\lambda = 0.5$, and the optimal design is identified:
+	
+	\begin{verbatim}
+args <- args0
+args$returnFIM <- TRUE
+objFun <- do.call(genObjFun, args)
+
+f1 <- function(x) - log(det(objFun(x)[[1]][1:3, 1:3]))
+f2 <- function(x) - log(det(objFun(x)[[1]][-(1:3), -(1:3)]))
+f <- function(x) .5 * f1(x) + .5*f2(x)
+
+Xi0 <-  seq(0, 4, length.out = 5)
+nlminb(start = Xi0, objective = f, lower = 0, upper = 4)[c("par", "objective")]
+
+# returns #
+
+$`par`
+[1] 0.2331545 0.2331545 1.0261762 2.1961446 2.1961435
+
+$objective
+[1] -11.75895
+	\end{verbatim}
+	
+	The second line of code adds a new argument, \textsf{returnFIM}, which is set to \textsf{TRUE}.
+	This changes the return value of the generated function from the log-determinant of the \textsf{FIM} to simply the \textsf{FIM} approximation itself.
+	The remaining lines of code directly specify the composite $D$-optimality objective function, followed by the optimisation step.
+
+	To replicate the first row of Table 2 in \cite{Wang2012}, where $\lambda = 0$, simply run
+	\begin{verbatim}
+	nlminb(start = Xi0, objective = f2, lower = 0, upper = 4)[c("par", "objective")]
+	
+	# returns #
+	
+	$`par`
+	[1] 0.2748855 0.2748866 1.6424521 1.6424451 1.6424473
+	
+	$objective
+	[1] -20.88068
+	\end{verbatim}
+
+\subsection{Population $D$-optimal design}
+
+	The \textsf{genObjFun} can also handle population $D$-optimal designs.
+	In this case, the design problem involves several individuals who may be allocated to different elementary designs.
+	In the code below, the \textsf{args} list is modified to specify that two individuals are to be allocated to two different elementary designs, each with three sampling times.
+	
+	\begin{verbatim}
+args <- args0
+args$noSamples <- c(3,3)
+objFun <- do.call(genObjFun, args)
+Xi0 <- c(1:3, 1:3)
+nlminb(start = Xi0, objective = objFun, lower = 0, upper = 4)[c("par", "objective")]
+
+# returns #
+
+$`par`
+[1] 0.2192545 0.9634978 2.4872472 0.2192544 0.9634977 2.4872472
+
+$objective
+[1] -4.297543
+	\end{verbatim}
+	
+		
+\todo[inline]{
+			By combining the verbatim environment with console output I have made copy-pasting and running a bit awkward... is that ok?
+}
+
+	Note that the \textsf{noSamples} argument is used to indicate the number of individuals (by the length of the vector provided, i.e., two) and the sizes of the elementary designs (by the integer valued entries of the vector provided, i.e., both three).
+	The first three values of the optimisation result constitute the first elementary design of the population $D$-optimal design and the last three values constitute the second elementary design.
+	This example replicates the first row of Table 3 in \cite{Wang2012}.
+	They note that while the two elementary designs are identical in the optimal design for this problem, that does not generally have to be the case.
+
+\subsection{Population $D$-optimal design, unbalanced}
+
+	This case is an extension of the previous case with multiple individuals.
+	Here, three groups of different sizes (with group sizes chosen by the user) are allocated to elementary designs of different lengths (with the design lengths chosen by the user).
+	Specifically, the first group consists of 30 individuals allocated to a design of length three, 
+	the second group of 4 individuals allocated to a design of length two and
+	the last group of 2 individuals allocated to a single point design.
+	The design problem is now to optimally choose the six design points that make up the three elementary designs.
+	Specifically, a $D_\beta$-optimal design is sought and the trace term is omitted (so \textsf{reduced = TRUE}).
+
+\begin{verbatim}
+args <- args0
+args$returnFIM <- TRUE
+
+args1 <- args
+args1$noSamples <- 3
+f1 <- function(Xi) do.call(genObjFun, args1)(Xi)[[1]][1:3, 1:3]
+
+args2 <- args
+args2$noSamples <- 2
+f2 <- function(Xi) do.call(genObjFun, args2)(Xi)[[1]][1:3, 1:3]
+
+args3 <- args
+args3$noSamples <- 1
+f3 <- function(Xi) do.call(genObjFun, args3)(Xi)[[1]][1:3, 1:3]
+
+
+f <- function(Xi) -log(det(
+  30*f1(Xi[1:3]) + 4*f2(Xi[4:5]) + 2*f3(Xi[6])
+  ))
+
+case <- DEoptim::DEoptim(f, lower = rep(0, 6), upper = rep(4, 6))
+
+... output from DEoptim ...
+
+nlminb(
+  start = case$optim$bestmem, 
+  objective = f, 
+  lower = 0, 
+  upper = 4)[c("par", "objective")]
+  
+# returns #
+  
+$`par`
+par1      par2      par3      par4      par5      par6 
+0.2170318 0.9784380 2.4956097 2.4309390 0.7556319 0.2550840 
+
+$objective
+[1] -12.74138
+\end{verbatim}
+
+	NB: the reason we need to define \textsf{args1}, \textsf{args2} and \textsf{args3} is lazy evaluation in \textsf{R};
+	if we instead kept updating \textsf{args}, the resulting functions would \emph{all} use the last definition of \textsf{args}.
+
+	The above results replicate row one of Table 4 in \cite{Wang2012}.
+	With this example, the basic capabilities of the \textsf{doptim} package have been covered.
+	In particular, it is worth noting that because the user is able to easily construct objective functions, 
+	the package provides a great deal of flexibility: for instance, it allows the user to expand or restrict the design space, customise the optimisation method and create composite objective functions.
+
+\todo[inline]{
+		Mention how independence of individuals implying additivity of elementary FIMs is used in the above.
+	}
+
+\section{Overview of \textsf{randon} package}
+	
+	The sensitivity plots and design graphs in Chapter 2 were created using the \textsf{randon} package.
+	The package makes three main functions available to the user:
+
+\begin{center}
+	\begin{tabular}{| c | p{8cm} |}
+		\hline
+		\textsf{calc\_aPMS} & Compute a first order approximation of aPMS for a given nonlinear regression function, parameter and interval. The aPMS is an attempt to measure the average deviation in the regression function over the interval (in NLME terms, the population level profile), caused by a perturbation in a single fixed effects parameter. It can used as a starting point to find realistic priors for marginal variances of (additive) random efffects. 
+		\\ \hline
+		\textsf{plot\_sensBands} & Plot regression function with aPMS sensitivity bands 
+		\\ \hline
+		\textsf{genOptimDesnRange} & A wrapper to generate a range of optimal designs for given model, parameter transformation and range of variance levels. 
+		\\ \hline
+	\end{tabular}
+\end{center}
+
+Of these functions, only \textsf{plot\_sensBands} and \textsf{genOptimDesnRange} are envisioned as part of the workflow suggested in this thesis; the \textsf{calc\_aPMS} function is used by the other two functions in \textsf{randon} to translate between variance level and magnitude of variance components.
+
+    \subsection{\textsf{plot\_sensBands}}
+    
+ \todo[inline]{
+    	add one more example, either more or less complicated
+}
+    
+ \todo[inline]{
+    	explain arguments (m <- list(...) in particular)
+}
+    
+    This function generates plots of the regression function, with added sensitivity bands, as seen in \REF ( Figure 2.1 of submitted thesis ).
+    The following code partially recreates the plot in the first panel of the Figure, i.e., 10\% sensitivity bands for the one-compartment \todo[inline]{check if I use capitals} model.
+           
+    \begin{verbatim}
+m <- list(
+  eta = expression(
+    (exp(beta2) / exp(beta3)) /
+      (exp(beta2) - exp(beta1)) *
+      (exp( - exp(beta1) * t) - exp( - exp(beta2) * t))
+  ),
+  beta = list(beta1 = 0, beta2 = 1, beta3 = 1),
+  tInt = c(0, 4)
+)
+
+plot_sensBands(model = m, VLrange_variedParam = .1)
+    \end{verbatim}
+
+\todo[inline]{
+	Should code be directly copy-paste-able? I.e., rather than copying over output from the console, should I copy over the raw code?
+}
+    
+    The \textsf{model} argument must be a list with three named elements
+    \begin{itemize}
+    	\item \textsf{eta}
+    	is an expression which defines the regression function, but \emph{without} any random effects specified. The parameters must be named \textsf{beta1}, \textsf{beta2}, etc. The covariate must be named \textsf{t}.
+    	\item \textsf{beta}
+    	is a list with entry names matching the corresponding fixed effects parameters. The entries are scalars setting the values of the parameters.
+    	\item \textsf{tInt} is a vector of length two, defining the (time) interval which the covariate \textsf{t} is restricted to for the purposes of the sensitivity plot.
+    \end{itemize}
+    
+    By supplying the \textsf{VLrange\_variedParam} argument, the user specifies which variance levels she wishes to visualise for the parameter being varied.
+    Per default, the parameter being varied is \textsf{"beta1"}, because it always exists.
+    If the user wishes to visualise several variance levels in the same plot, she can supply a vector-valued \textsf{VLrange\_variedParam} argument, as follows.
+    
+    \begin{verbatim}
+    plot_sensBands(model = m, VLrange_variedParam = c(.1, .2, .3))    
+    \end{verbatim}
+    
+    This code recreates the first panel of Figure 2.1.
+    Lastly, to fully recreate Figure 2.1, one can supply a vector of parameter names to the function.
+    
+    \begin{verbatim}
+plot_sensBands(model = m, 
+               VLrange_variedParam = c(.1, .2, .3), 
+               paramName_variedParam = c("beta1", "beta2","beta3"))
+    \end{verbatim} 
+    
+    This generates three plots, one per entry in the vector \textsf{c("beta1", "beta2","beta3")} supplied to \textsf{paramName\_variedParam}, each with three sensitivity bands, one per entry in the vector \textsf{c(.1, .2, .3)} supplied to \textsf{VLrange\_variedParam}.
+    
+    \subsection{genOptimDesnRange}
+    
+    \todo[inline]{
+    	Ideally, I would like sections with more informative names, like we have for doptim package
+    }
+    
+    \todo[inline]{
+    	genOptimDesnRange examples - comment on global optim
+    }
+
+    This function was used to generate the design graphs and efficiency profiles in \REF (Chapter 2 in submitted thesis).
+    C:/Users/ketil/OneDrive/Documents/research/Research/Reports
+\includegraphics[width=5in]{C:/Users/ketil/OneDrive/Documents/research/Research/Reports/Paper1/plots/SigmoidEmax/MCAGQ_logdetFIM_bsConfInt}    
+
+	\bibliography{mybib}
+
+\end{document}

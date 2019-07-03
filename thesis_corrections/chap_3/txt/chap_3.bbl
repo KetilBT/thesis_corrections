@@ -1,0 +1,26 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Atkinson et~al.(2007)Atkinson, Donev, and Tobias]{AtkinsonBook2007}
+A.~C. Atkinson, A.~N. Donev, and R.~D. Tobias.
+\newblock \emph{Optimum Experimental Designs, with {SAS}}.
+\newblock Oxford University Press, 2007.
+
+\bibitem[Kitsos and Kolovos(2013)]{Kitsos2013}
+C.~Kitsos and K.~Kolovos.
+\newblock A compilation of the {D}-optimal designs in chemical kinetics.
+\newblock \emph{Chemical Engineering Communications}, 200:\penalty0 185--204,
+  2013.
+
+\bibitem[Wang et~al.(2012)Wang, Eskridge, and Nadarajah]{Wang2012}
+Y.~Wang, K.~M. Eskridge, and S.~Nadarajah.
+\newblock Optimal design of mixed-effects {PK}/{PD} models based on
+  differential equations.
+\newblock \emph{Journal of Biopharmaceutical Statistics}, 22:\penalty0
+  180--205, 2012.
+
+\end{thebibliography}

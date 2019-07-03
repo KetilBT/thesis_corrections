@@ -1,0 +1,11 @@
+\BOOKMARK [1][-]{section.1}{Overview of doptim package}{}% 1
+\BOOKMARK [1][-]{section.2}{Example: Simple linear regression aka how to specify a model in doptim}{}% 2
+\BOOKMARK [1][-]{section.3}{Example: exponential decay - first nonlinear example}{}% 3
+\BOOKMARK [1][-]{section.4}{Replicating Wang2012}{}% 4
+\BOOKMARK [2][-]{subsection.4.1}{D-optimal design for a single individual}{section.4}% 5
+\BOOKMARK [2][-]{subsection.4.2}{Composite D-optimal design}{section.4}% 6
+\BOOKMARK [2][-]{subsection.4.3}{Population D-optimal design}{section.4}% 7
+\BOOKMARK [2][-]{subsection.4.4}{Population D-optimal design, unbalanced}{section.4}% 8
+\BOOKMARK [1][-]{section.5}{Overview of randon package}{}% 9
+\BOOKMARK [2][-]{subsection.5.1}{plot\137sensBands}{section.5}% 10
+\BOOKMARK [2][-]{subsection.5.2}{genOptimDesnRange}{section.5}% 11
